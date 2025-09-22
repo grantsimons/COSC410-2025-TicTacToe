@@ -1,10 +1,10 @@
 import React from "react";
-import type { GameStateDTO } from "@/App";
+import type { GameStateDTO, Cell } from "@/App";
 
 interface TicTacToeProps {
   game: GameStateDTO;
   onMove: (cellIndex: number) => void;
-  isActive?: boolean; // new
+  isActive?: boolean; // highlight & click control
 }
 
 export default function TicTacToe({ game, onMove, isActive }: TicTacToeProps) {
@@ -13,22 +13,21 @@ export default function TicTacToe({ game, onMove, isActive }: TicTacToeProps) {
   return (
     <div
       className={`relative w-64 h-64 border-2 ${
-        isActive ? "border-yellow-400 ring-4 ring-yellow-300" : "border-black"
+        isActive ? "border-yellow-400 ring-4 ring-yellow-300" : "border-black opacity-60"
       }`}
     >
       {/* Board grid */}
       <div className="grid grid-cols-3 gap-1 w-full h-full">
-{game.board.map((cell: Cell, i: number) => (
-  <button
-    key={i}
-    className="aspect-square w-full flex items-center justify-center text-3xl font-bold border border-gray-400 box-border focus:outline-none"
-    onClick={() => onMove(i)}
-    disabled={!!cell || !!winner || is_draw}
-  >
-    {cell}
-  </button>
-))}
-
+        {game.board.map((cell: Cell, i: number) => (
+          <button
+            key={i}
+            className="aspect-square w-full flex items-center justify-center text-3xl font-bold border border-gray-400 box-border focus:outline-none"
+            onClick={() => onMove(i)}
+            disabled={!isActive || !!cell || !!winner || is_draw} // disable inactive boards
+          >
+            {cell}
+          </button>
+        ))}
       </div>
 
       {/* Winner overlay */}

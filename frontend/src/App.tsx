@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import TicTacToe from "@/components/TicTacToe";
 
-// ----- Central DTO -----
+// ----- DTO types -----
 export type Player = "X" | "O";
 export type Cell = Player | null;
 
@@ -19,10 +19,12 @@ export default function App() {
   const [games, setGames] = useState<GameStateDTO[]>([]);
   const [status, setStatus] = useState("Loading...");
 
+  // Initialize all boards
   useEffect(() => {
     resetAll();
   }, []);
 
+  // Reset all 9 boards
   async function resetAll() {
     const newGames: GameStateDTO[] = [];
     for (let i = 0; i < 9; i++) {
@@ -37,6 +39,7 @@ export default function App() {
     setStatus("X's turn");
   }
 
+  // Handle move on a board
   async function handleMove(boardIndex: number, cellIndex: number) {
     const game = games[boardIndex];
     if (game.winner || game.board[cellIndex]) return;
@@ -51,16 +54,23 @@ export default function App() {
     );
     const updatedGame = await res.json();
 
+    // Update the board
     const updatedGames = [...games];
     updatedGames[boardIndex] = updatedGame;
     setGames(updatedGames);
 
-    setStatus(updatedGame.status);
+    // Update global status
+    if (updatedGame.winner) setStatus(`${updatedGame.winner} Wins!`);
+    else if (updatedGame.is_draw) setStatus("Draw");
+    else setStatus(`${updatedGame.current_player}'s turn`);
   }
 
   return (
-    <div className="flex flex-col items-center space-y-4">
-      <h1 className="text-xl font-bold">{status}</h1>
+    <div className="flex flex-col items-center space-y-4 p-4">
+      {/* Global status */}
+      <h1 className="text-2xl font-bold">{status}</h1>
+
+      {/* New Game button */}
       <button
         onClick={resetAll}
         className="px-4 py-2 bg-blue-500 text-white rounded"
@@ -68,7 +78,8 @@ export default function App() {
         New Game
       </button>
 
-      <div className="grid grid-cols-3 gap-4">
+      {/* 9-board grid */}
+      <div className="grid grid-cols-3 gap-4 mt-4">
         {games.map((game, i) => (
           <TicTacToe
             key={game.id}

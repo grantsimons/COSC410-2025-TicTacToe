@@ -18,8 +18,8 @@ export type GameStateDTO = {
 export default function App() {
   const [games, setGames] = useState<GameStateDTO[]>([]);
   const [status, setStatus] = useState("Loading...");
+  const [activeBoard, setActiveBoard] = useState<number | null>(null);
 
-  // Initialize all boards
   useEffect(() => {
     resetAll();
   }, []);
@@ -37,10 +37,14 @@ export default function App() {
     }
     setGames(newGames);
     setStatus("X's turn");
+    setActiveBoard(null); // first move: free choice
   }
 
   // Handle move on a board
   async function handleMove(boardIndex: number, cellIndex: number) {
+    // Only allow move if board is active
+    if (activeBoard !== null && activeBoard !== boardIndex) return;
+
     const game = games[boardIndex];
     if (game.winner || game.board[cellIndex]) return;
 
@@ -54,7 +58,6 @@ export default function App() {
     );
     const updatedGame = await res.json();
 
-    // Update the board
     const updatedGames = [...games];
     updatedGames[boardIndex] = updatedGame;
     setGames(updatedGames);
@@ -63,6 +66,16 @@ export default function App() {
     if (updatedGame.winner) setStatus(`${updatedGame.winner} Wins!`);
     else if (updatedGame.is_draw) setStatus("Draw");
     else setStatus(`${updatedGame.current_player}'s turn`);
+
+    // Determine next active board
+// Determine next active board
+let nextActiveBoard: number | null = cellIndex; // explicitly allow null
+const targetBoard = updatedGames[nextActiveBoard];
+if (targetBoard?.winner || targetBoard?.is_draw) {
+  nextActiveBoard = null; // free choice if board won/drawn
+}
+setActiveBoard(nextActiveBoard);
+
   }
 
   return (
@@ -85,6 +98,7 @@ export default function App() {
             key={game.id}
             game={game}
             onMove={(cellIndex) => handleMove(i, cellIndex)}
+            isActive={activeBoard === null || activeBoard === i} // highlight active board
           />
         ))}
       </div>

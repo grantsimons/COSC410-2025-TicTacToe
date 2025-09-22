@@ -7,7 +7,7 @@ interface TicTacToeProps {
 }
 
 export default function TicTacToe({ game, onMove }: TicTacToeProps) {
-  const winner = game.winner;
+  const { winner, is_draw } = game;
 
   return (
     <div className="relative w-64 h-64 border-2 border-black">
@@ -16,14 +16,14 @@ export default function TicTacToe({ game, onMove }: TicTacToeProps) {
         {game.board.map((cell, i) => (
           <button
             key={i}
-            className="w-20 h-20
-    flex items-center justify-center
-    text-3xl font-bold
-    border border-gray-400
-    box-border
-    focus:outline-none"
+            className="aspect-square w-full
+              flex items-center justify-center
+              text-3xl font-bold
+              border border-gray-400
+              box-border
+              focus:outline-none"
             onClick={() => onMove(i)}
-            disabled={!!cell || !!winner || game.is_draw}
+            disabled={!!cell || !!winner || is_draw}
           >
             {cell}
           </button>
@@ -37,6 +37,13 @@ export default function TicTacToe({ game, onMove }: TicTacToeProps) {
             ${winner === "X" ? "bg-red-500" : "bg-blue-500"}`}
         >
           {winner}
+        </div>
+      )}
+
+      {/* Overlay if game is a draw */}
+      {is_draw && !winner && (
+        <div className="absolute inset-0 flex items-center justify-center text-gray-700 text-4xl font-bold bg-gray-300">
+          Draw
         </div>
       )}
     </div>

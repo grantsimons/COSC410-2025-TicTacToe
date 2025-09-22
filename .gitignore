@@ -100,6 +100,7 @@ frontend/build/
 # Ignore local-only env files used by compose
 .env
 .env.local
+.venv
 
 # -------------------------
 # Misc project-level

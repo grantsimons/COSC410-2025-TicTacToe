@@ -24,30 +24,31 @@ export default function App() {
     resetAll();
   }, []);
 
-  // Reset all 9 boards
+  // Reset all 9 boards by creating them on backend
   async function resetAll() {
     const newGames: GameStateDTO[] = [];
     for (let i = 0; i < 9; i++) {
-      // Start empty boards; backend can still create a game, but we ignore current_player
       const res = await fetch("http://localhost:8000/tictactoe/new", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ starting_player: activePlayer }), // ensure backend knows who starts
+        body: JSON.stringify({ starting_player: activePlayer }),
       });
-      const game = await res.json();
-      // Force empty board, ignore backend’s current_player
+      const game: GameStateDTO = await res.json();
+
+      // Optional: force empty board for frontend display
       game.board = Array(9).fill(null);
       game.winner = null;
       game.is_draw = false;
+
       newGames.push(game);
     }
     setGames(newGames);
-    setActivePlayer("X"); // reset active player
+    setActivePlayer("X");
     setStatus("X's turn");
-    setActiveBoard(null); // free choice on first move
+    setActiveBoard(null);
   }
 
-  // Handle move on a board
+  // Handle move: call backend, update frontend
   async function handleMove(boardIndex: number, cellIndex: number) {
     // Only allow move if board is active
     if (activeBoard !== null && activeBoard !== boardIndex) return;
@@ -55,36 +56,39 @@ export default function App() {
     const game = games[boardIndex];
     if (game.winner || game.board[cellIndex]) return;
 
-    // Send frontend activePlayer to backend for consistency
-    const res = await fetch(
-      `http://localhost:8000/tictactoe/${game.id}/move`,
-      {
+    try {
+      // Call backend move endpoint
+      const res = await fetch(`http://localhost:8000/tictactoe/${game.id}/move`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ index: cellIndex, player: activePlayer }),
+        body: JSON.stringify({ index: cellIndex }),
+      });
+      if (!res.ok) throw new Error("Move failed");
+
+      const updatedGame: GameStateDTO = await res.json();
+
+      // Update frontend board to reflect move
+      updatedGame.board[cellIndex] = activePlayer;
+
+      const updatedGames = [...games];
+      updatedGames[boardIndex] = updatedGame;
+      setGames(updatedGames);
+
+      // Flip active player
+      const nextPlayer: Player = activePlayer === "X" ? "O" : "X";
+      setActivePlayer(nextPlayer);
+      setStatus(`${nextPlayer}'s turn`);
+
+      // Determine next active board
+      let nextActiveBoard: number | null = cellIndex;
+      const targetBoard = updatedGames[nextActiveBoard];
+      if (targetBoard?.winner || targetBoard?.is_draw) {
+        nextActiveBoard = null; // free choice if board is won/drawn
       }
-    );
-    const updatedGame = await res.json();
-
-    // Force frontend board to reflect activePlayer
-    updatedGame.board[cellIndex] = activePlayer;
-
-    const updatedGames = [...games];
-    updatedGames[boardIndex] = updatedGame;
-    setGames(updatedGames);
-
-    // Flip player for next move
-    const nextPlayer: Player = activePlayer === "X" ? "O" : "X";
-    setActivePlayer(nextPlayer);
-    setStatus(`${nextPlayer}'s turn`);
-
-    // Determine next active board
-    let nextActiveBoard: number | null = cellIndex;
-    const targetBoard = updatedGames[nextActiveBoard];
-    if (targetBoard?.winner || targetBoard?.is_draw) {
-      nextActiveBoard = null; // free choice if board won/drawn
+      setActiveBoard(nextActiveBoard);
+    } catch (err) {
+      console.error("Move failed:", err);
     }
-    setActiveBoard(nextActiveBoard);
   }
 
   return (

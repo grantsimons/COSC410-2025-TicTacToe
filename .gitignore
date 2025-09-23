@@ -114,3 +114,4 @@ frontend/build/
 # If you use pyenv/direnv locally
 .python-version
 .direnv/
+frontend/pnpm-workspace.yaml

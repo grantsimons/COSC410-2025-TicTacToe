@@ -63,3 +63,14 @@ def delete_game(game_id: str) -> dict:
         del GAMES[game_id]
         return {"ok": True}
     return {"ok": False, "reason": "not found"}
+
+@router.post("/{game_id}/reset", response_model=GameStateDTO)
+def reset_game(game_id: str) -> GameStateDTO:
+    gs = GAMES.get(game_id)
+    if not gs:
+        raise HTTPException(status_code=404, detail="Game not found.")
+    # Create a new game state
+    new_state = new_game()
+    # Replace the list with just the new state
+    GAMES[game_id] = [new_state]
+    return _to_dto(game_id, new_state)

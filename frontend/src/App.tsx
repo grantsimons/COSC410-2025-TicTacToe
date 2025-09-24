@@ -1,41 +1,49 @@
 "use client";
 import { useEffect, useState } from "react";
 import TicTacToe from "@/components/TicTacToe";
-import type { GameStateDTO, Player, Cell } from "./types";
+
+// ----- DTO types -----
+export type Player = "X" | "O";
+export type Cell = Player | null;
+
+export type GameStateDTO = {
+  id: string;
+  board: Cell[];
+  current_player: Player;
+  winner: Player | null;
+  is_draw: boolean;
+  status: string;
+};
 
 export default function App() {
   const [games, setGames] = useState<GameStateDTO[]>([]);
   const [status, setStatus] = useState("Loading...");
   const [activeBoard, setActiveBoard] = useState<number | null>(null);
+  const [activePlayer, setActivePlayer] = useState<Player>("X");
 
   useEffect(() => {
     resetAll();
   }, []);
 
-  // Reset all 9 boards by creating them on backend
+  // Reset all 9 boards from backend
   async function resetAll() {
     const newGames: GameStateDTO[] = [];
     for (let i = 0; i < 9; i++) {
       const res = await fetch("http://localhost:8000/tictactoe/new", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ starting_player: "X" }), // default to X
+        body: JSON.stringify({ starting_player: "X" }), // backend default
       });
       const game: GameStateDTO = await res.json();
-
-      // Optional: force empty board for frontend display
-      game.board = Array(9).fill(null);
-      game.winner = null;
-      game.is_draw = false;
-
       newGames.push(game);
     }
     setGames(newGames);
+    setActivePlayer("X");
     setStatus("X's turn");
     setActiveBoard(null);
   }
 
-  // Handle move: call backend, update frontend
+  // Handle move: backend is source of truth
   async function handleMove(boardIndex: number, cellIndex: number) {
     if (activeBoard !== null && activeBoard !== boardIndex) return;
 
@@ -43,11 +51,14 @@ export default function App() {
     if (game.winner || game.board[cellIndex]) return;
 
     try {
-      const res = await fetch(`http://localhost:8000/tictactoe/${game.id}/move`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ index: cellIndex }),
-      });
+      const res = await fetch(
+        `http://localhost:8000/tictactoe/${game.id}/move`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ index: cellIndex }),
+        }
+      );
       if (!res.ok) throw new Error("Move failed");
 
       const updatedGame: GameStateDTO = await res.json();
@@ -56,7 +67,8 @@ export default function App() {
       updatedGames[boardIndex] = updatedGame;
       setGames(updatedGames);
 
-      // Update global status from backend
+      // Sync active player from backend
+      setActivePlayer(updatedGame.current_player);
       setStatus(updatedGame.status);
 
       // Determine next active board
@@ -85,7 +97,7 @@ export default function App() {
       <div className="grid grid-cols-3 gap-4 mt-4">
         {games.map((game, i) => (
           <TicTacToe
-            key={i}
+            key={game.id}
             game={game}
             onMove={(cellIndex) => handleMove(i, cellIndex)}
             isActive={activeBoard === null || activeBoard === i}

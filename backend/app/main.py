@@ -8,12 +8,13 @@ origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,      # set False if you’re not using cookies/auth
-    allow_methods=["*"],         # or ["GET","POST","DELETE","OPTIONS"]
-    allow_headers=["*"],         # must allow "content-type"
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(t3_router)

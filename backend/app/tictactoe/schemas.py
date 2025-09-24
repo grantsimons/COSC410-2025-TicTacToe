@@ -1,25 +1,27 @@
-from __future__ import annotations
+from pydantic import BaseModel
+from typing import List, Optional
 
-from typing import Literal
-
-from pydantic import BaseModel, Field
-
-Player = Literal["X", "O"]
-
-
-class GameCreate(BaseModel):
-    starting_player: Player | None = Field(default="X")
-
-
+# --- Standard game DTO ---
 class GameStateDTO(BaseModel):
     id: str
-    board: list[Player | None]
-    current_player: Player
-    winner: Player | None
-    is_draw: bool
+    board: list[Optional[str]]  # or list["X"|"O"|None]
+    current_player: str
+    winner: Optional[str] = None
+    is_draw: bool = False
     status: str
 
+# --- Game creation ---
+class GameCreate(BaseModel):
+    starting_player: Optional[str] = "X"
 
+# --- Move request ---
 class MoveRequest(BaseModel):
     index: int
-    symbol: Player  # new field
+    symbol: str  # "X" or "O"
+
+# --- Super game DTO ---
+class SuperGameStateDTO(BaseModel):
+    id: str                   # ✅ add this
+    boards: List[GameStateDTO]
+    major_winner: Optional[str] = None
+    major_draw: bool = False

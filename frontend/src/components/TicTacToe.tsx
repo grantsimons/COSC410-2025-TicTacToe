@@ -7,20 +7,25 @@ interface TicTacToeProps {
   isActive?: boolean;
 }
 
-export default function TicTacToe({ game, onMove, isActive }: TicTacToeProps) {
-  const { winner, is_draw } = game;
+export default function TicTacToe({ game, onMove, isActive = true }: TicTacToeProps) {
+  const { winner, is_draw, board, id } = game;
+
+  if (!board || !id) return null;
 
   return (
     <div
-      className={`relative w-64 h-64 border-2 ${
-        isActive ? "border-yellow-400 ring-4 ring-yellow-300" : "border-black opacity-60"
+      className={`relative w-64 h-64 border-4 rounded ${
+        isActive ? "border-yellow-400 ring-4 ring-yellow-300" : "border-gray-400 opacity-60"
       }`}
     >
+      {/* Grid of cells */}
       <div className="grid grid-cols-3 gap-1 w-full h-full">
-        {game.board.map((cell: Cell, i: number) => (
+        {board.map((cell: Cell, i: number) => (
           <button
-            key={i}
-            className="aspect-square w-full flex items-center justify-center text-3xl font-bold border border-gray-400 box-border focus:outline-none"
+            key={`${id}-${i}`}
+            className={`aspect-square w-full flex items-center justify-center text-3xl font-bold border border-gray-400 box-border focus:outline-none bg-white ${
+              cell === "X" ? "text-red-600" : cell === "O" ? "text-blue-600" : "text-black"
+            }`}
             onClick={() => onMove(i)}
             disabled={!isActive || !!cell || !!winner || is_draw}
           >
@@ -29,21 +34,23 @@ export default function TicTacToe({ game, onMove, isActive }: TicTacToeProps) {
         ))}
       </div>
 
+      {/* Winner overlay */}
       {winner && (
-  <div
-    className={`absolute inset-0 flex items-center justify-center text-white text-5xl font-bold ${
-      winner === "X" ? "bg-red-500" : "bg-blue-500"
-    }`}
-  >
-    {winner}
-  </div>
-)}
+        <div
+          className="absolute inset-0 flex items-center justify-center text-5xl font-bold text-black bg-yellow-200 bg-opacity-50 pointer-events-none rounded"
+        >
+          {winner} Wins
+        </div>
+      )}
 
-{is_draw && !winner && (
-  <div className="absolute inset-0 flex items-center justify-center text-gray-700 text-4xl font-bold bg-gray-300">
-    Draw
-  </div>
-)}
+      {/* Draw overlay */}
+      {is_draw && !winner && (
+        <div
+          className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-gray-800 bg-gray-200 bg-opacity-60 pointer-events-none rounded"
+        >
+          Draw
+        </div>
+      )}
     </div>
   );
 }

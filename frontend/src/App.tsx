@@ -15,44 +15,58 @@ export type GameStateDTO = {
   status: string;
 };
 
+export type SuperGameStateDTO = {
+  id: string; // backend-provided UUID
+  boards: GameStateDTO[];
+  major_winner: Player | null;
+  major_draw: boolean;
+};
+
 export default function App() {
-  const [games, setGames] = useState<GameStateDTO[]>([]);
-  const [status, setStatus] = useState("Loading...");
-  const [activeBoard, setActiveBoard] = useState<number | null>(null);
+  const [superGame, setSuperGame] = useState<SuperGameStateDTO | null>(null);
   const [activePlayer, setActivePlayer] = useState<Player>("X");
+  const [activeBoard, setActiveBoard] = useState<number | null>(null);
+
+  const displayStatus = superGame
+    ? superGame.major_winner
+      ? `🎉 ${superGame.major_winner} wins the Super Game!`
+      : superGame.major_draw
+      ? "Super Game Draw"
+      : `${activePlayer}'s turn`
+    : "Loading...";
 
   useEffect(() => {
-    resetAll();
+    resetSuperGame();
   }, []);
 
-  // Reset all 9 boards from backend
-  async function resetAll() {
-    const newGames: GameStateDTO[] = [];
-    for (let i = 0; i < 9; i++) {
-      const res = await fetch("http://localhost:8000/tictactoe/new", {
+  async function resetSuperGame() {
+    try {
+      const res = await fetch("http://localhost:8000/tictactoe/super/new", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ starting_player: "X" }), // backend default
       });
-      const game: GameStateDTO = await res.json();
-      newGames.push(game);
+      if (!res.ok) throw new Error("Failed to fetch new Super Game");
+
+      const newSuperGame: SuperGameStateDTO = await res.json();
+      setSuperGame(newSuperGame); // use backend UUID
+      setActivePlayer("X");
+      setActiveBoard(null);
+    } catch (err) {
+      console.error("Failed to reset Super Game:", err);
     }
-    setGames(newGames);
-    setActivePlayer("X");
-    setStatus("X's turn");
-    setActiveBoard(null);
   }
 
-  // Handle move: backend is source of truth
   async function handleMove(boardIndex: number, cellIndex: number) {
+    if (!superGame) return;
+    const board = superGame.boards[boardIndex];
+
+    // Block invalid moves
+    if (superGame.major_winner || superGame.major_draw) return;
     if (activeBoard !== null && activeBoard !== boardIndex) return;
-  
-    const game = games[boardIndex];
-    if (game.winner || game.board[cellIndex]) return;
-  
+    if (board.winner || board.board[cellIndex]) return;
+
     try {
       const res = await fetch(
-        `http://localhost:8000/tictactoe/${game.id}/move`,
+        `http://localhost:8000/tictactoe/${superGame.id}/super/move?board_index=${boardIndex}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -60,47 +74,42 @@ export default function App() {
         }
       );
       if (!res.ok) throw new Error("Move failed");
-  
-      const updatedGame: GameStateDTO = await res.json();
-  
-      const updatedGames = [...games];
-      updatedGames[boardIndex] = updatedGame;
-      setGames(updatedGames);
-  
-      // flip active player globally
-      const nextPlayer = activePlayer === "X" ? "O" : "X";
+
+      const updatedSuperGame: SuperGameStateDTO = await res.json();
+      setSuperGame(updatedSuperGame);
+
+      // Flip active player
+      const nextPlayer: Player = activePlayer === "X" ? "O" : "X";
       setActivePlayer(nextPlayer);
-  
+
       // Determine next active board
       let nextActiveBoard: number | null = cellIndex;
-      const targetBoard = updatedGames[nextActiveBoard];
-      if (targetBoard?.winner || targetBoard?.is_draw) nextActiveBoard = null;
+      const targetBoard = updatedSuperGame.boards[nextActiveBoard];
+      if (!targetBoard || targetBoard.winner || targetBoard.is_draw) {
+        nextActiveBoard = null; // free choice if target board is complete
+      }
       setActiveBoard(nextActiveBoard);
-  
-      setStatus(`${nextPlayer}'s turn`);
     } catch (err) {
       console.error("Move failed:", err);
     }
   }
-  
-  
-  
+
   return (
     <div className="flex flex-col items-center space-y-4 p-4">
-      <h1 className="text-2xl font-bold">{status}</h1>
+      <h1 className="text-2xl font-bold">{displayStatus}</h1>
 
       <button
-        onClick={resetAll}
+        onClick={resetSuperGame}
         className="px-4 py-2 bg-blue-500 text-white rounded"
       >
         New Game
       </button>
 
       <div className="grid grid-cols-3 gap-4 mt-4">
-        {games.map((game, i) => (
+        {superGame?.boards.map((board, i) => (
           <TicTacToe
-            key={game.id}
-            game={game}
+            key={board.id}
+            game={board}
             onMove={(cellIndex) => handleMove(i, cellIndex)}
             isActive={activeBoard === null || activeBoard === i}
           />

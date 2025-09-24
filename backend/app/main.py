@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.tictactoe.router import router as t3_router
 
 app = FastAPI()

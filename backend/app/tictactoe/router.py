@@ -1,13 +1,15 @@
-from fastapi import APIRouter, HTTPException
 from uuid import uuid4
-from typing import Dict, List
-from .engine import GameState, new_game, move, status
+
+from fastapi import APIRouter, HTTPException
+
+from .engine import GameState, move, new_game, status
 from .schemas import GameCreate, GameStateDTO, MoveRequest
 
 router = APIRouter(prefix="/tictactoe", tags=["tictactoe"])
 
 # naive in-memory store
-GAMES: Dict[str, List[GameState]] = {}
+GAMES: dict[str, list[GameState]] = {}
+
 
 def _to_dto(game_id: str, gs: GameState) -> GameStateDTO:
     return GameStateDTO(
@@ -19,6 +21,7 @@ def _to_dto(game_id: str, gs: GameState) -> GameStateDTO:
         status=status(gs),
     )
 
+
 @router.post("/new", response_model=GameStateDTO)
 def create_game(payload: GameCreate) -> GameStateDTO:
     gs = new_game()
@@ -29,6 +32,7 @@ def create_game(payload: GameCreate) -> GameStateDTO:
 
     print(f"[CREATE] Game {gid} started. Current player: {gs.current_player}")
     return _to_dto(gid, gs)
+
 
 @router.post("/{game_id}/move", response_model=GameStateDTO)
 def make_move(game_id: str, payload: MoveRequest) -> GameStateDTO:
@@ -48,7 +52,9 @@ def make_move(game_id: str, payload: MoveRequest) -> GameStateDTO:
 
     GAMES[game_id].append(new_state)
 
-    print(f"[MOVE] Game {game_id}, move at {payload.index}, placed: {placed_symbol}. New current player: {new_state.current_player}")
+    print(
+        f"[MOVE] Game {game_id}, move at {payload.index}, placed: {placed_symbol}. New current player: {new_state.current_player}"
+    )
 
     return _to_dto(game_id, new_state)
 

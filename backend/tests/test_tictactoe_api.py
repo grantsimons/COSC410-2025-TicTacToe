@@ -12,46 +12,42 @@ def test_create_and_get_game():
     data = r.json()
     gid = data["id"]
     assert data["current_player"] == "O"
+    assert len(data["boards"]) == 9
+    assert data["active_board"] is None
 
     r = client.get(f"/tictactoe/{gid}")
     assert r.status_code == 200
     data2 = r.json()
     assert data2["id"] == gid
-    assert data2["board"] == [None]*9
+    assert len(data2["boards"]) == 9
 
-def test_make_move_and_win_flow():
+def test_make_move_and_active_board_rule():
     r = client.post("/tictactoe/new", json={"starting_player": "X"})
     gid = r.json()["id"]
 
-    # X at 0
-    r = client.post(f"/tictactoe/{gid}/move", json={"index": 0})
-    assert r.status_code == 200
-    # O at 3
-    r = client.post(f"/tictactoe/{gid}/move", json={"index": 3})
-    assert r.status_code == 200
-    # X at 1
-    r = client.post(f"/tictactoe/{gid}/move", json={"index": 1})
-    assert r.status_code == 200
-    # O at 4
-    r = client.post(f"/tictactoe/{gid}/move", json={"index": 4})
-    assert r.status_code == 200
-    # X at 2 -> win
-    r = client.post(f"/tictactoe/{gid}/move", json={"index": 2})
+    # First move can be anywhere: play board 0, cell 4
+    r = client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 4})
     assert r.status_code == 200
     data = r.json()
-    assert data["winner"] == "X"
-    assert data["status"].startswith("X wins")
+    assert data["boards"][0]["cells"][4] == "X"
+    # Next active board must be 4
+    assert data["active_board"] == 4
+
+    # Illegal board: try to play on board 0 again -> 400
+    r = client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 0})
+    assert r.status_code == 400
+    assert "Must play in board 4" in r.json()["detail"]
 
 def test_bad_requests():
     r = client.post("/tictactoe/new", json={})
     gid = r.json()["id"]
 
-    r = client.post(f"/tictactoe/{gid}/move", json={"index": 99})
+    r = client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 99})
     assert r.status_code == 400
-    assert "Index must be in range" in r.json()["detail"]
+    assert "Cell index must be in range" in r.json()["detail"]
 
-    # occupy 0 then try again
-    client.post(f"/tictactoe/{gid}/move", json={"index": 0})
-    r = client.post(f"/tictactoe/{gid}/move", json={"index": 0})
+    # occupy board 0 cell 0 then try again
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 0})
+    r = client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 0})
     assert r.status_code == 400
     assert "Cell already occupied" in r.json()["detail"]

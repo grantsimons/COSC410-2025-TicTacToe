@@ -1,5 +1,5 @@
 import pytest
-from app.tictactoe.engine import new_game, move, available_moves, status
+from app.tictactoe.engine import new_game, move, available_moves, status, super_new_game, super_move
 
 def test_new_game_initial_state():
     gs = new_game()
@@ -79,3 +79,20 @@ def test_game_over_disallows_moves():
     gs = move(gs, 2) # X wins
     with pytest.raises(ValueError):
         move(gs, 8)
+
+
+def test_super_new_game_and_move_flow():
+    s = super_new_game()
+    assert s["current_player"] == "X"
+    assert s["active_board"] is None
+    assert len(s["boards"]) == 9
+
+    # First move on board 0, cell 4
+    s = super_move(s, 0, 4)
+    assert s["boards"][0]["cells"][4] == "X"
+    assert s["current_player"] == "O"
+    assert s["active_board"] == 4
+
+    # Next move must be on board 4
+    s = super_move(s, 4, 0)
+    assert s["boards"][4]["cells"][0] == "O"

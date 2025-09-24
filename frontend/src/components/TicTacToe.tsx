@@ -17,10 +17,39 @@ type GameStateDTO = {
   status: string;
 };
 
+// Super format (what the API actually returns)
+type SuperGameStateDTO = {
+  id: string;
+  boards: Array<{
+    cells: Cell[];
+    winner: Player | null;
+    is_draw: boolean;
+  }>;
+  current_player: Player;
+  active_board: number | null;
+  global_winner: Player | null;
+  is_global_draw: boolean;
+  status: string;
+};
+
 // Prefer env, fallback to localhost:8000
 const API_BASE =
   (import.meta as any)?.env?.VITE_API_URL?.replace(/\/$/, "") ??
   "http://localhost:8000";
+
+// Convert Super format to classic format for compatibility
+function superToClassic(superState: SuperGameStateDTO): GameStateDTO {
+  // Use the first board as the classic board
+  const firstBoard = superState.boards[0];
+  return {
+    id: superState.id,
+    board: firstBoard.cells,
+    current_player: superState.current_player,
+    winner: superState.global_winner || firstBoard.winner,
+    is_draw: superState.is_global_draw || firstBoard.is_draw,
+    status: superState.status,
+  };
+}
 
 
 
@@ -64,7 +93,8 @@ export default function TicTacToe({ onWin }: Props) {
       body: JSON.stringify({ starting_player: "X" }),
     });
     if (!r.ok) throw new Error(`Create failed: ${r.status}`);
-    return r.json();
+    const superState: SuperGameStateDTO = await r.json();
+    return superToClassic(superState);
   }
 
   async function playMove(index: number): Promise<GameStateDTO> {
@@ -78,7 +108,8 @@ export default function TicTacToe({ onWin }: Props) {
       const detail = await r.json().catch(() => ({}));
       throw new Error(detail?.detail ?? `Move failed: ${r.status}`);
     }
-    return r.json();
+    const superState: SuperGameStateDTO = await r.json();
+    return superToClassic(superState);
   }
 
   async function handleClick(i: number) {

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 Player = Literal["X", "O"]
-Cell = Optional[Player]
+Cell = Player | None
 
 WIN_LINES: tuple[tuple[int, int, int], ...] = (
     (0, 1, 2),

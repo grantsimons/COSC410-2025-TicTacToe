@@ -71,7 +71,7 @@ def make_move(game_id: str, payload: SuperMoveRequest) -> dict:
     try:
         new_state = super_move(gs, payload.board_index, payload.cell_index)
     except (IndexError, ValueError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     SUPER_GAMES[game_id] = new_state
     return _serialize(game_id, new_state)
 

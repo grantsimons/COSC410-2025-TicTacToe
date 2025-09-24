@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
 from app.tictactoe.router import router
 
 app = FastAPI()
 app.include_router(router)
 client = TestClient(app)
+
+# ruff: noqa: S101  (pytest asserts are idiomatic in tests)
+
 
 def test_create_and_get_game():
     r = client.post("/tictactoe/new", json={"starting_player": "O"})
@@ -20,6 +24,7 @@ def test_create_and_get_game():
     data2 = r.json()
     assert data2["id"] == gid
     assert len(data2["boards"]) == 9
+
 
 def test_make_move_and_active_board_rule():
     r = client.post("/tictactoe/new", json={"starting_player": "X"})
@@ -37,6 +42,7 @@ def test_make_move_and_active_board_rule():
     r = client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 0})
     assert r.status_code == 400
     assert "Must play in board 4" in r.json()["detail"]
+
 
 def test_bad_requests():
     r = client.post("/tictactoe/new", json={})

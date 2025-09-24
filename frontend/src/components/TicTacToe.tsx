@@ -30,20 +30,20 @@ export default function TicTacToe({ game, onMove, isActive }: TicTacToeProps) {
       </div>
 
       {winner && (
-        <div
-          className={`absolute inset-0 flex items-center justify-center text-white text-5xl font-bold ${
-            winner === "X" ? "bg-red-500" : "bg-blue-500"
-          }`}
-        >
-          {winner}
-        </div>
-      )}
+  <div
+    className={`absolute inset-0 flex items-center justify-center text-white text-5xl font-bold ${
+      winner === "X" ? "bg-red-500" : "bg-blue-500"
+    }`}
+  >
+    {winner}
+  </div>
+)}
 
-      {is_draw && !winner && (
-        <div className="absolute inset-0 flex items-center justify-center text-gray-700 text-4xl font-bold bg-gray-300">
-          Draw
-        </div>
-      )}
+{is_draw && !winner && (
+  <div className="absolute inset-0 flex items-center justify-center text-gray-700 text-4xl font-bold bg-gray-300">
+    Draw
+  </div>
+)}
     </div>
   );
 }

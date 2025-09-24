@@ -1,19 +1,25 @@
 from __future__ import annotations
-from pydantic import BaseModel, Field, conint
-from typing import Optional, List, Literal
+
+from typing import Literal
+
+from pydantic import BaseModel, Field
 
 Player = Literal["X", "O"]
 
+
 class GameCreate(BaseModel):
-    starting_player: Optional[Player] = Field(default="X")
+    starting_player: Player | None = Field(default="X")
+
 
 class GameStateDTO(BaseModel):
     id: str
-    board: List[Optional[Player]]
+    board: list[Player | None]
     current_player: Player
-    winner: Optional[Player]
+    winner: Player | None
     is_draw: bool
     status: str
 
+
 class MoveRequest(BaseModel):
     index: int
+    symbol: Player  # new field

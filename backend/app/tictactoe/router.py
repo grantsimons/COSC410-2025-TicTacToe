@@ -44,17 +44,17 @@ def make_move(game_id: str, payload: MoveRequest) -> GameStateDTO:
     if gs.winner or gs.is_draw:
         raise HTTPException(status_code=400, detail="Game is already over.")
 
+    # Expect payload.symbol from frontend
+    symbol = payload.symbol
+    if symbol not in ["X", "O"]:
+        raise HTTPException(status_code=400, detail="Invalid symbol.")
+
     try:
-        new_state = move(gs, payload.index)
-        placed_symbol = gs.current_player  # capture the symbol that was just placed
+        new_state = move(gs, payload.index, symbol)  # pass symbol explicitly
     except (IndexError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e))
 
     GAMES[game_id].append(new_state)
-
-    print(
-        f"[MOVE] Game {game_id}, move at {payload.index}, placed: {placed_symbol}. New current player: {new_state.current_player}"
-    )
 
     return _to_dto(game_id, new_state)
 

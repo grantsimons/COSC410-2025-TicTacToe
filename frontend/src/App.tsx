@@ -46,43 +46,45 @@ export default function App() {
   // Handle move: backend is source of truth
   async function handleMove(boardIndex: number, cellIndex: number) {
     if (activeBoard !== null && activeBoard !== boardIndex) return;
-
+  
     const game = games[boardIndex];
     if (game.winner || game.board[cellIndex]) return;
-
+  
     try {
       const res = await fetch(
         `http://localhost:8000/tictactoe/${game.id}/move`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ index: cellIndex }),
+          body: JSON.stringify({ index: cellIndex, symbol: activePlayer }),
         }
       );
       if (!res.ok) throw new Error("Move failed");
-
+  
       const updatedGame: GameStateDTO = await res.json();
-
+  
       const updatedGames = [...games];
       updatedGames[boardIndex] = updatedGame;
       setGames(updatedGames);
-
-      // Sync active player from backend
-      setActivePlayer(updatedGame.current_player);
-      setStatus(updatedGame.status);
-
+  
+      // flip active player globally
+      const nextPlayer = activePlayer === "X" ? "O" : "X";
+      setActivePlayer(nextPlayer);
+  
       // Determine next active board
       let nextActiveBoard: number | null = cellIndex;
       const targetBoard = updatedGames[nextActiveBoard];
-      if (targetBoard?.winner || targetBoard?.is_draw) {
-        nextActiveBoard = null; // free choice if board is won/drawn
-      }
+      if (targetBoard?.winner || targetBoard?.is_draw) nextActiveBoard = null;
       setActiveBoard(nextActiveBoard);
+  
+      setStatus(`${nextPlayer}'s turn`);
     } catch (err) {
       console.error("Move failed:", err);
     }
   }
-
+  
+  
+  
   return (
     <div className="flex flex-col items-center space-y-4 p-4">
       <h1 className="text-2xl font-bold">{status}</h1>

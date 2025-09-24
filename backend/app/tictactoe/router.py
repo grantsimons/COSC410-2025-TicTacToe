@@ -1,16 +1,15 @@
 from uuid import uuid4
-
 from fastapi import APIRouter, HTTPException, Query
+from typing import List
 
-from .engine import GameState, SuperGameState, move, move_super, new_game, status
+from .engine import GameState, move, new_game, status, move_super, SuperGameState
 from .schemas import GameCreate, GameStateDTO, MoveRequest, SuperGameStateDTO
 
 router = APIRouter(prefix="/tictactoe", tags=["tictactoe"])
 
 # In-memory stores
-GAMES: dict[str, list[GameState]] = {}
+GAMES: dict[str, List[GameState]] = {}
 SUPER_GAMES: dict[str, SuperGameState] = {}
-
 
 # --- Helper functions ---
 def _to_dto(game_id: str, gs: GameState) -> GameStateDTO:
@@ -24,7 +23,6 @@ def _to_dto(game_id: str, gs: GameState) -> GameStateDTO:
     )
 
 
-# test
 def _to_super_dto(game_id: str, sgs: SuperGameState) -> SuperGameStateDTO:
     return SuperGameStateDTO(
         id=game_id,
@@ -79,7 +77,9 @@ def create_super_game():
 
 @router.post("/{game_id}/super/move", response_model=SuperGameStateDTO)
 def make_super_move(
-    game_id: str, board_index: int = Query(..., ge=0, le=8), payload: MoveRequest = ...
+    game_id: str,
+    board_index: int = Query(..., ge=0, le=8),
+    payload: MoveRequest = ...
 ):
     if game_id not in SUPER_GAMES:
         raise HTTPException(status_code=404, detail="Super Game not found.")

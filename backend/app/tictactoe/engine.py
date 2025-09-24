@@ -169,9 +169,10 @@ def super_move(state: dict[str, Any], board_index: int, cell_index: int) -> dict
     elif _all_boards_closed_dict(next_state):
         next_state["is_global_draw"] = True
 
+    # Set next active board to the cell_index, but if that board is closed, allow any board
     next_state["active_board"] = cell_index
-    ab = next_state["active_board"]
-    if next_state["boards"][ab]["winner"] is not None or next_state["boards"][ab]["is_draw"]:
+    board = next_state["boards"][cell_index]
+    if board["winner"] is not None or board["is_draw"]:
         next_state["active_board"] = None
 
     if not next_state["global_winner"] and not next_state["is_global_draw"]:

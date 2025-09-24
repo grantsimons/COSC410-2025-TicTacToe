@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import TicTacToe from "../components/TicTacToe";
 import App from "../App";
 
@@ -89,5 +89,40 @@ describe("TicTacToe component (API via MSW)", () => {
     // Board 0 should now be the active board
     const board0 = screen.getByLabelText("board-0-cell-0").closest("div")?.parentElement;
     expect(board0).toHaveClass("ring-2", "ring-indigo-400/60");
+  });
+
+  it("renders Super Tic-Tac-Toe by default", async () => {
+    render(<App />);
+    
+    // Should show Super Tic-Tac-Toe header
+    expect(await screen.findByText("Super Tic‑Tac‑Toe")).toBeInTheDocument();
+    
+    // Should show the game board
+    await screen.findByLabelText("board-0-cell-0");
+  });
+
+  it("shows loading state initially", async () => {
+    render(<App />);
+    
+    // Should show loading initially
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
+    
+    // Then should load the game
+    await screen.findByLabelText("board-0-cell-0");
+  });
+
+  it("shows error state when API fails", async () => {
+    // Mock fetch to reject
+    const originalFetch = global.fetch;
+    global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+    
+    render(<App />);
+    
+    // Should show error
+    expect(await screen.findByText(/Error: Network error/)).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /retry/i })).toBeInTheDocument();
+    
+    // Restore original fetch
+    global.fetch = originalFetch;
   });
 });

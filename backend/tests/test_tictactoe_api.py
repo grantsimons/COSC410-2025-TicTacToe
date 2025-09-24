@@ -57,3 +57,91 @@ def test_bad_requests():
     r = client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 0})
     assert r.status_code == 400
     assert "Cell already occupied" in r.json()["detail"]
+
+
+def test_mini_board_win_via_api():
+    """Test mini-board win through API"""
+    r = client.post("/tictactoe/new", json={"starting_player": "X"})
+    gid = r.json()["id"]
+
+    # Win board 0: X plays 0,1,2
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 0})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 3})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 1})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 4})
+    r = client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 2})
+
+    data = r.json()
+    assert data["boards"][0]["winner"] == "X"
+    assert data["boards"][0]["is_draw"] is False
+    assert data["active_board"] is None  # Any board now
+
+
+def test_global_win_via_api():
+    """Test global win through API"""
+    r = client.post("/tictactoe/new", json={"starting_player": "X"})
+    gid = r.json()["id"]
+
+    # Win boards 0, 1, 2 (top row) to win the Super game
+    # Board 0: X wins
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 0})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 3})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 1})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 4})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 0, "cell_index": 2})
+
+    # Board 1: X wins
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 1, "cell_index": 0})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 1, "cell_index": 3})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 1, "cell_index": 1})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 1, "cell_index": 4})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 1, "cell_index": 2})
+
+    # Board 2: X wins -> Global win!
+    r = client.post(f"/tictactoe/{gid}/move", json={"board_index": 2, "cell_index": 0})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 2, "cell_index": 3})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 2, "cell_index": 1})
+    client.post(f"/tictactoe/{gid}/move", json={"board_index": 2, "cell_index": 4})
+    r = client.post(f"/tictactoe/{gid}/move", json={"board_index": 2, "cell_index": 2})
+
+    data = r.json()
+    assert data["global_winner"] == "X"
+    assert data["is_global_draw"] is False
+
+
+def test_cannot_move_after_global_win():
+    """Test that moves are rejected after global win"""
+    r = client.post("/tictactoe/new", json={"starting_player": "X"})
+    gid = r.json()["id"]
+
+    # Win boards 0, 1, 2 to achieve global win
+    for board in [0, 1, 2]:
+        client.post(f"/tictactoe/{gid}/move", json={"board_index": board, "cell_index": 0})
+        client.post(f"/tictactoe/{gid}/move", json={"board_index": board, "cell_index": 3})
+        client.post(f"/tictactoe/{gid}/move", json={"board_index": board, "cell_index": 1})
+        client.post(f"/tictactoe/{gid}/move", json={"board_index": board, "cell_index": 4})
+        client.post(f"/tictactoe/{gid}/move", json={"board_index": board, "cell_index": 2})
+
+    # Try to make another move after global win
+    r = client.post(f"/tictactoe/{gid}/move", json={"board_index": 3, "cell_index": 0})
+    assert r.status_code == 400
+    assert "Game is already over" in r.json()["detail"]
+
+
+def test_delete_game():
+    """Test game deletion"""
+    r = client.post("/tictactoe/new", json={"starting_player": "X"})
+    gid = r.json()["id"]
+
+    # Verify game exists
+    r = client.get(f"/tictactoe/{gid}")
+    assert r.status_code == 200
+
+    # Delete game
+    r = client.delete(f"/tictactoe/{gid}")
+    assert r.status_code == 200
+    assert r.json()["ok"] is True
+
+    # Verify game is gone
+    r = client.get(f"/tictactoe/{gid}")
+    assert r.status_code == 404

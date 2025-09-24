@@ -49,7 +49,7 @@ describe("TicTacToe component (API via MSW)", () => {
     fireEvent.click(screen.getByLabelText("cell-0"));
     await screen.findByText(/O's turn/i);   // wait until move resolved
     fireEvent.click(screen.getByLabelText("cell-3"));
-    await screen.findByText(/X's turn/i);   // wait until move resolved
+    await screen.findByText(/X's turn/i);   // wait until move resolved3
     fireEvent.click(screen.getByLabelText("cell-1"));
     await screen.findByText(/O's turn/i);   // wait until move resolved
     fireEvent.click(screen.getByLabelText("cell-4"));

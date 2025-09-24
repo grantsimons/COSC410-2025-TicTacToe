@@ -136,7 +136,7 @@ export default function TicTacToe({ onWin }: Props) {
     <div className="max-w-sm mx-auto p-4">
       <div className="text-center mb-2 text-xl font-semibold">{status}</div>
       <div className="grid grid-cols-3 gap-2">
-        {board.map((c, i) => (
+        {board.map((c: Cell, i: number) => (
           <button
             key={i}
             className="aspect-square rounded-2xl border text-3xl font-bold flex items-center justify-center disabled:opacity-50"

@@ -45,7 +45,7 @@ export default function App() {
         method: "POST",
       });
       if (!res.ok) throw new Error("Failed to fetch new Super Game");
-
+  
       const newSuperGame: SuperGameStateDTO = await res.json();
       setSuperGame(newSuperGame); // use backend UUID
       setActivePlayer("X");

@@ -17,5 +17,11 @@ export default defineConfig({
     setupFiles: "./vitest.setup.ts",
     globals: true,
     css: true,
+    coverage: {
+      provider: "c8",                // or 'istanbul'
+      reporter: ["text", "html"],    // show in terminal + generate HTML
+      reportsDirectory: "coverage",  // folder where HTML will be generated
+      all: true,                      // include all files, not just tested ones
+    },
   },
 });

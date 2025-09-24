@@ -95,3 +95,12 @@ def make_super_move(
         raise HTTPException(status_code=400, detail=str(e))
 
     return _to_super_dto(game_id, sgs)
+
+
+# --- GET endpoint for a standard game ---
+@router.get("/{game_id}", response_model=GameStateDTO)
+def get_game(game_id: str):
+    if game_id not in GAMES:
+        raise HTTPException(status_code=404, detail="Game not found.")
+    # Return the latest state of the game
+    return _to_dto(game_id, GAMES[game_id][-1])
